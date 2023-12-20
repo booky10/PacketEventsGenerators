@@ -177,7 +177,8 @@ fabric.properties
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -454,3 +455,4 @@ run/
 next-env.d.ts
 *.iml
 .secrets
+generated/
