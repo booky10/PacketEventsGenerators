@@ -14,7 +14,7 @@ import java.nio.file.Path;
 
 public final class RegistryGenerator implements IGenerator {
 
-    private static <T> void generateJsonObject(Path outDir, Registry<T> registry) throws IOException {
+    static <T> JsonObject generateJsonObject(Registry<T> registry) {
         JsonObject obj = new JsonObject();
         for (T element : registry) {
             ResourceLocation elementKey = registry.getKey(element);
@@ -26,12 +26,15 @@ public final class RegistryGenerator implements IGenerator {
             int elementId = registry.getId(element);
             obj.addProperty(elementName, elementId);
         }
-
-        Path outPath = outDir.resolve(GenerationUtil.getRegistryName(registry) + ".json");
-        GenerationUtil.saveJsonElement(obj, outPath);
+        return obj;
     }
 
-    private static <T> void generateJsonArray(Path outDir, Registry<T> registry) throws IOException {
+    private static void generateJsonObject(Path outDir, Registry<?> registry) throws IOException {
+        Path outPath = outDir.resolve(GenerationUtil.getRegistryName(registry) + ".json");
+        GenerationUtil.saveJsonElement(generateJsonObject(registry), outPath);
+    }
+
+    static <T> JsonArray generateJsonArray(Registry<T> registry) {
         JsonArray arr = new JsonArray();
         for (T element : registry) {
             ResourceLocation elementKey = registry.getKey(element);
@@ -40,9 +43,12 @@ public final class RegistryGenerator implements IGenerator {
             }
             arr.add(elementKey.getPath());
         }
+        return arr;
+    }
 
+    private static void generateJsonArray(Path outDir, Registry<?> registry) throws IOException {
         Path outPath = outDir.resolve(GenerationUtil.getRegistryName(registry) + ".json");
-        GenerationUtil.saveJsonElement(arr, outPath);
+        GenerationUtil.saveJsonElement(generateJsonArray(registry), outPath);
     }
 
     @Override

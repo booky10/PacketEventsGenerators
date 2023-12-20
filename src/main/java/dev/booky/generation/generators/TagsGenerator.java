@@ -24,7 +24,6 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -37,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -86,13 +84,6 @@ public final class TagsGenerator implements IGenerator {
         return Collections.unmodifiableList(tagDirs);
     }
 
-    private static String asFieldName(ResourceLocation location) {
-        return GenerationUtil.toString(location)
-                .toUpperCase(Locale.ROOT)
-                .replace(File.separatorChar, '_') // remove nesting
-                .replaceAll("__+", "_"); // remove adjacent underscores
-    }
-
     private static String buildTagRef(TagType tagType, ResourceLocation tagName) {
         return buildRef(tagType.tagsClass(), tagName);
     }
@@ -102,7 +93,7 @@ public final class TagsGenerator implements IGenerator {
     }
 
     private static String buildRef(String className, ResourceLocation tagName) {
-        return className + '.' + asFieldName(tagName);
+        return className + '.' + GenerationUtil.asFieldName(tagName);
     }
 
     @Override

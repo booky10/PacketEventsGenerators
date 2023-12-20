@@ -4,6 +4,7 @@ package dev.booky.generation;
 import com.mojang.logging.LogUtils;
 import dev.booky.generation.generators.BlockMappingsGenerator;
 import dev.booky.generation.generators.IGenerator;
+import dev.booky.generation.generators.ItemTypesGenerator;
 import dev.booky.generation.generators.RegistryGenerator;
 import dev.booky.generation.generators.TagsGenerator;
 import net.minecraft.SharedConstants;
@@ -52,7 +53,8 @@ public final class GenerationMain {
         List<IGenerator> generators = List.of(
                 new RegistryGenerator(),
                 new BlockMappingsGenerator(),
-                new TagsGenerator()
+                new TagsGenerator(),
+                new ItemTypesGenerator()
         );
 
         LOGGER.info("Running {} generators...", generators.size());

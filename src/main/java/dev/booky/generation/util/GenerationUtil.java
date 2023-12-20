@@ -10,9 +10,11 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 public final class GenerationUtil {
 
@@ -47,6 +49,13 @@ public final class GenerationUtil {
             throw new IllegalStateException("Can't get name of unregistered registry: " + registry);
         }
         return toString(registryKey);
+    }
+
+    public static String asFieldName(ResourceLocation location) {
+        return toString(location)
+                .toUpperCase(Locale.ROOT)
+                .replace(File.separatorChar, '_') // remove nesting
+                .replaceAll("__+", "_"); // remove adjacent underscores
     }
 
     public static String toString(ResourceLocation resourceLoc) {
