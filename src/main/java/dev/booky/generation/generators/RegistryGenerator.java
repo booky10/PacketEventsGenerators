@@ -39,7 +39,7 @@ public final class RegistryGenerator implements IGenerator {
     }
 
     @Override
-    public void generate(Path outPath) {
+    public void generate(Path outDir, String genName) {
         System.out.println(createRegistryDumpObj(BuiltInRegistries.ENTITY_TYPE));
         System.out.println(createRegistryDumpObj(BuiltInRegistries.ENCHANTMENT));
         System.out.println(createRegistryDumpObj(BuiltInRegistries.ITEM));

@@ -8,8 +8,11 @@ import dev.booky.generation.generators.RegistryGenerator;
 import dev.booky.generation.generators.TagsGenerator;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
+import org.apache.logging.log4j.LogManager;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -21,7 +24,22 @@ public final class GenerationMain {
     }
 
     public static void main(String[] args) {
-        Path outDir = Path.of(args[0]); // passed by gradle ":generate" task
+        try {
+            Path outDir = Path.of(args[0]); // passed by gradle ":generate" task
+            run(outDir);
+        } finally {
+            // safely shutdown - sometimes causes issues where log4j just
+            // deletes a few of the last log messages
+            LogManager.shutdown();
+        }
+    }
+
+    public static void run(Path outDir) {
+        try {
+            Files.createDirectories(outDir);
+        } catch (IOException exception) {
+            throw new RuntimeException("Error while creating output directory at " + outDir, exception);
+        }
 
         LOGGER.info("Initializing minecraft constants...");
         long start = System.currentTimeMillis();
@@ -41,7 +59,12 @@ public final class GenerationMain {
         for (IGenerator generator : generators) {
             String genName = generator.getClass().getSimpleName();
             LOGGER.info(" Running {}...", genName);
-            generator.generate(outDir.resolve(genName));
+
+            try {
+                generator.generate(outDir, genName);
+            } catch (IOException exception) {
+                LOGGER.error(" Error while running {}", genName, exception);
+            }
         }
     }
 }

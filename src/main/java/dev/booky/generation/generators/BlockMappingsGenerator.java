@@ -8,38 +8,56 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 public final class BlockMappingsGenerator implements IGenerator {
 
-    @Override
-    public void generate(Path outPath) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(SharedConstants.getCurrentVersion().getId());
-
-        for (BlockState state : Block.BLOCK_STATE_REGISTRY) {
-            builder.append('\n');
-            if (state.getBlock().defaultBlockState() == state) {
-                builder.append('*'); // default state
-            }
-
-            ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-            builder.append(blockKey.getPath());
-
-            if (!state.getValues().isEmpty()) {
-                builder.append('[');
-                builder.append(state.getValues().entrySet().stream()
-                        .map(entry -> {
-                            Property<?> property = entry.getKey();
-                            String valueName = ((Property) property).getName(entry.getValue());
-                            return property.getName() + "=" + valueName;
-                        })
-                        .collect(Collectors.joining(",")));
-                builder.append(']');
-            }
+    @SuppressWarnings({"rawtypes", "unchecked"}) // I don't care
+    private static void stringifyStateValues(Writer writer, Map<Property<?>, Comparable<?>> values) throws IOException{
+        if (values.isEmpty()) {
+            return; // no values present, nothing to stringify
         }
 
-        System.out.println(builder);
+        writer.write('[');
+        boolean first = true;
+        for (Map.Entry<Property<?>, Comparable<?>> entry : values.entrySet()) {
+            if (first) {
+                first = false;
+            } else {
+                writer.write(',');
+            }
+
+            Property<?> property = entry.getKey();
+            writer.write(property.getName());
+            writer.write('=');
+
+            String valueName = ((Property) property).getName(entry.getValue());
+            writer.write(valueName);
+        }
+        writer.write(']');
+    }
+
+    @Override
+    public void generate(Path outDir, String genName) throws IOException {
+        Path outPath = outDir.resolve(genName + ".txt");
+        try (BufferedWriter writer = Files.newBufferedWriter(outPath)) {
+            writer.write(SharedConstants.getCurrentVersion().getId());
+
+            for (BlockState state : Block.BLOCK_STATE_REGISTRY) {
+                writer.newLine();
+                if (state.getBlock().defaultBlockState() == state) {
+                    writer.append('*'); // default state
+                }
+
+                ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+                writer.append(blockKey.getPath());
+                stringifyStateValues(writer, state.getValues());
+            }
+        }
     }
 }
