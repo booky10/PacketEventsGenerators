@@ -1,4 +1,4 @@
-rootProject.name = "PacketEventsUtils"
+rootProject.name = "PacketEventsGenerators"
 
 pluginManagement {
     repositories {
