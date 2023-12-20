@@ -61,5 +61,6 @@ public final class RegistryGenerator implements IGenerator {
         generateJsonObject(outDir, BuiltInRegistries.ITEM);
         generateJsonArray(outDir, BuiltInRegistries.PARTICLE_TYPE);
         generateJsonArray(outDir, BuiltInRegistries.ATTRIBUTE);
+        generateJsonArray(outDir, BuiltInRegistries.BLOCK);
     }
 }

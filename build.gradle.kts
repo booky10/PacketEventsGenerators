@@ -19,6 +19,7 @@ minecraft {
     runs {
         server("generate") {
             mainClass("dev.booky.generation.GenerationMain")
+            accessWideners(sourceSets.main.map { it.resources.single { file -> file.name == "wideners.at" } })
             args(project.layout.projectDirectory.dir("generated").toString())
         }
     }

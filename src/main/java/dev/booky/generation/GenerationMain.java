@@ -6,6 +6,7 @@ import dev.booky.generation.generators.BlockMappingsGenerator;
 import dev.booky.generation.generators.IGenerator;
 import dev.booky.generation.generators.ItemTypesGenerator;
 import dev.booky.generation.generators.RegistryGenerator;
+import dev.booky.generation.generators.StateTypesGenerator;
 import dev.booky.generation.generators.TagsGenerator;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
@@ -54,7 +55,8 @@ public final class GenerationMain {
                 new RegistryGenerator(),
                 new BlockMappingsGenerator(),
                 new TagsGenerator(),
-                new ItemTypesGenerator()
+                new ItemTypesGenerator(),
+                new StateTypesGenerator()
         );
 
         LOGGER.info("Running {} generators...", generators.size());
