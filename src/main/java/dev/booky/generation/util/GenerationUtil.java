@@ -8,6 +8,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,6 +22,16 @@ public final class GenerationUtil {
             .create();
 
     private GenerationUtil() {
+    }
+
+    public static JsonElement loadJsonElement(Path path) throws IOException {
+        return loadJsonElement(path, JsonElement.class);
+    }
+
+    public static <T> T loadJsonElement(Path path, Class<T> typeClass) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            return GSON.fromJson(reader, typeClass);
+        }
     }
 
     public static void saveJsonElement(JsonElement element, Path path) throws IOException {

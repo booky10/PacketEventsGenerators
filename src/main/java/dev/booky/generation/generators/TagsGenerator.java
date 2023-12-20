@@ -1,171 +1,296 @@
 package dev.booky.generation.generators;
 // Created by booky10 in MinecraftSource (19:02 05.09.23)
 
+import com.google.common.base.Preconditions;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import dev.booky.generation.util.GenerationUtil;
+import net.minecraft.SharedConstants;
+import net.minecraft.Util;
+import net.minecraft.WorldVersion;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.data.DataGenerator;
+import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
+import net.minecraft.data.registries.VanillaRegistries;
+import net.minecraft.data.tags.UpdateOneTwentyOneBlockTagsProvider;
+import net.minecraft.data.tags.UpdateOneTwentyOneItemTagsProvider;
+import net.minecraft.data.tags.VanillaBlockTagsProvider;
+import net.minecraft.data.tags.VanillaItemTagsProvider;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class TagsGenerator implements IGenerator {
 
-    @Override
-    public void generate(Path outDir, String genName) {
-        if (true) return; // TODO
+    private void runDataGenerator(Path outDir) throws IOException {
+        WorldVersion version = SharedConstants.getCurrentVersion();
+        DataGenerator generator = new DataGenerator(outDir, version, true);
 
-//        Path outDir = Path.of("generated");
-//        if (true) {
-//            if (Files.isDirectory(outDir)) {
-//                PathUtils.deleteDirectory(outDir);
-//            }
-//            Main.main(new String[]{"--all"});
-//        }
-//
-//        List<Path> tagsDirs = List.of(
-//                outDir.resolve(Path.of("data", "minecraft", "tags")),
-//                outDir.resolve(Path.of("data", "minecraft", "datapacks", "update_1_21", "data", "minecraft", "tags")),
-//                outDir.resolve(Path.of("data", "minecraft", "datapacks", "trade_rebalance", "data", "minecraft", "tags")),
-//                outDir.resolve(Path.of("data", "minecraft", "datapacks", "bundle", "data", "minecraft", "tags"))
-//        );
-//        List<Data> data = List.of(
-//                new Data("blocks", "BlockTags", "StateTypes", BlockTags.class, true),
-//                new Data("items", "ItemTags", "ItemTypes", ItemTags.class, false)
-//        );
-//
-//        Map<Map.Entry<List<String>, List<String>>, String> copyableStuff = new HashMap<>();
-//
-//        for (Data datum : data) {
-//            // required for correct order
-//            Map<String, List<Path>> tagsLocs = new LinkedHashMap<>();
-//            for (Field field : datum.clazz().getFields()) {
-//                if (!Modifier.isPublic(field.getModifiers())
-//                        || !Modifier.isStatic(field.getModifiers())
-//                        || !Modifier.isFinal(field.getModifiers())) {
-//                    continue;
-//                }
-//
-//                TagKey<?> key = (TagKey<?>) field.get(null);
-//                tagsLocs.put(key.location().getPath(), new ArrayList<>());
-//            }
-//
-//            for (Path tagsDir : tagsDirs) {
-//                Path path = tagsDir.resolve(datum.regName());
-//                if (!Files.isDirectory(path)) {
-//                    continue;
-//                }
-//
-//                try (Stream<Path> tree = Files.walk(path)) {
-//                    tree
-//                            .filter(file -> !file.equals(path) && Files.isRegularFile(file))
-//                            .forEach(file -> {
-//                                String tagName = path.relativize(file).toString();
-//                                tagName = tagName.substring(0, tagName.length() - ".json".length());
-//                                tagsLocs.get(tagName).add(file);
-//                            });
-//                }
-//            }
-//
-//            Map<String, Tag> tagObjs = new LinkedHashMap<>();
-//            for (Map.Entry<String, List<Path>> entry : tagsLocs.entrySet()) {
-//                JsonArray values = new JsonArray();
-//                for (Path path : entry.getValue()) {
-//                    JsonObject tagContents = GsonHelper.parse(Files.readString(path));
-//                    values.addAll(tagContents.remove("values").getAsJsonArray());
-//                    Preconditions.checkState(tagContents.isEmpty(), "%s != empty", tagContents);
-//                }
-//
-//                List<String> types = new ArrayList<>();
-//                List<String> tags = new ArrayList<>();
-//                for (JsonElement elem : values) {
-//                    String elemStr = elem.getAsString();
-//                    if (elemStr.indexOf('#') == 0) {
-//                        tags.add(elemStr.substring(1)
-//                                .replace("minecraft:", ""));
-//                    } else {
-//                        types.add(elemStr.replace("minecraft:", ""));
-//                    }
-//
-//                }
-//
-//                Tag tag = new Tag(datum.tagsClass, datum.typesClass, entry.getKey(), tags, types);
-//                tagObjs.put(tag.name, tag);
-//            }
-//
-//            for (Map.Entry<String, Tag> entry : tagObjs.entrySet()) {
-//                for (String tag : entry.getValue().tags) {
-//                    entry.getValue().parents.add(tagObjs.get(tag));
-//                }
-//            }
-//            while (!tagObjs.isEmpty()) {
-//                List<Tag> roots = tagObjs.values().stream()
-//                        .filter(tag -> tag.parents.isEmpty())
-//                        .toList();
-//                for (Tag root : roots) {
-//                    System.out.println(root.toString(datum.allowCopy, copyableStuff));
-//                }
-//                tagObjs.values().removeAll(roots);
-//                for (Tag tag : tagObjs.values()) {
-//                    tag.parents.removeAll(roots);
-//                }
-//            }
-//        }
-//    }
-//
-//    private record Data(String regName, String tagsClass, String typesClass, Class<?> clazz, boolean allowCopy) {}
-//
-//    private static final class Tag {
-//
-//        private final String tagsClass;
-//        private final String typesClass;
-//        private final String name;
-//        private final List<String> tags;
-//        private final List<String> types;
-//
-//        private final List<Tag> parents = new ArrayList<>();
-//
-//        private Tag(String tagsClass, String typesClass, String name, List<String> tags, List<String> types) {
-//            this.tagsClass = tagsClass;
-//            this.typesClass = typesClass;
-//            this.name = name;
-//            this.tags = tags;
-//            this.types = types;
-//        }
-//
-//        public String toString(boolean allowCopy, Map<Map.Entry<List<String>, List<String>>, String> copyableStuff) {
-//            StringBuilder bob = new StringBuilder();
-//            Runnable applyId = () -> bob
-//                    .append(this.tagsClass)
-//                    .append('.')
-//                    .append(this.name
-//                            .toUpperCase(Locale.ROOT)
-//                            .replace(File.separator, "_")
-//                            .replaceAll("__+", "_"));
-//
-//            if (allowCopy) {
-//                applyId.run();
-//                copyableStuff.put(Map.entry(types, tags), bob.toString());
-//            } else {
-//                String copyId = copyableStuff.get(Map.entry(types, tags));
-//                if (copyId != null) {
-//                    bob.append("copy(").append(copyId).append(", ");
-//                    applyId.run();
-//                    bob.append(");");
-//                    return bob.toString();
-//                }
-//                applyId.run();
-//            }
-//
-//            for (String tag : tags) {
-//                bob.append(".addTag(")
-//                        .append(this.tagsClass)
-//                        .append('.')
-//                        .append(tag.toUpperCase(Locale.ROOT))
-//                        .append(')');
-//            }
-//            if (!types.isEmpty()) {
-//                String joined = types.stream()
-//                        .map(type -> type.toUpperCase(Locale.ROOT))
-//                        .map(type -> this.typesClass + "." + type)
-//                        .collect(Collectors.joining(", "));
-//                bob.append(".add(").append(joined).append(')');
-//            }
-//            return bob.append(';').toString();
-//        }
+        DataGenerator.PackGenerator vanilla = generator.getVanillaPack(true);
+
+        CompletableFuture<HolderLookup.Provider> vanillaRegistryFuture = CompletableFuture.supplyAsync(
+                VanillaRegistries::createLookup, Util.backgroundExecutor());
+        VanillaBlockTagsProvider vanillaBlockTags = vanilla.addProvider(output ->
+                new VanillaBlockTagsProvider(output, vanillaRegistryFuture));
+        VanillaItemTagsProvider vanillaItemTags = vanilla.addProvider(output ->
+                new VanillaItemTagsProvider(output, vanillaRegistryFuture, vanillaBlockTags.contentsGetter()));
+
+        CompletableFuture<RegistrySetBuilder.PatchedRegistries> update121RegistryFuture =
+                UpdateOneTwentyOneRegistries.createLookup(vanillaRegistryFuture);
+        CompletableFuture<HolderLookup.Provider> update121PatcherRegistryFuture =
+                update121RegistryFuture.thenApply(RegistrySetBuilder.PatchedRegistries::patches);
+
+        DataGenerator.PackGenerator update121 = generator.getBuiltinDatapack(true, "update_1_21");
+        UpdateOneTwentyOneBlockTagsProvider update121BlockTags = update121.addProvider(output ->
+                new UpdateOneTwentyOneBlockTagsProvider(output, update121PatcherRegistryFuture, vanillaBlockTags.contentsGetter()));
+        update121.addProvider(output -> new UpdateOneTwentyOneItemTagsProvider(output,
+                update121PatcherRegistryFuture, vanillaItemTags.contentsGetter(), update121BlockTags.contentsGetter()));
+
+        generator.run();
+    }
+
+    private static List<Path> searchDirs(Path startDir, String dirName) throws IOException {
+        List<Path> tagDirs = new ArrayList<>();
+        Files.walkFileTree(startDir, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (exc == null && dirName.equals(dir.getFileName().toString())) {
+                    tagDirs.add(dir); // only add matching dirs
+                }
+                return super.postVisitDirectory(dir, exc);
+            }
+        });
+        return Collections.unmodifiableList(tagDirs);
+    }
+
+    private static String asFieldName(ResourceLocation location) {
+        return GenerationUtil.toString(location)
+                .toUpperCase(Locale.ROOT)
+                .replace(File.separatorChar, '_') // remove nesting
+                .replaceAll("__+", "_"); // remove adjacent underscores
+    }
+
+    private static String buildTagRef(TagType tagType, ResourceLocation tagName) {
+        return buildRef(tagType.tagsClass(), tagName);
+    }
+
+    private static String buildTypeRef(TagType tagType, ResourceLocation tagName) {
+        return buildRef(tagType.typesClass(), tagName);
+    }
+
+    private static String buildRef(String className, ResourceLocation tagName) {
+        return className + '.' + asFieldName(tagName);
+    }
+
+    @Override
+    public void generate(Path outDir, String genName) throws IOException {
+        Path genOutDir = outDir.resolve(genName);
+
+        // run data generators to extract vanilla tags
+        Path vanillaDataDir = genOutDir.resolve("vanilla");
+        this.runDataGenerator(vanillaDataDir);
+
+        // search extract vanilla data for tag directories
+        // TODO support non-"minecraft" namespaced tags
+        List<Path> tagDirs = searchDirs(vanillaDataDir, "tags");
+
+        // build info data for available tag types - PacketEvents only supports blocks/items at the moment
+        List<TagType> tagTypes = List.of(
+                new TagType(new ResourceLocation("blocks"), "BlockTags", "StateTypes", BlockTags.class),
+                new TagType(new ResourceLocation("items"), "ItemTags", "ItemTypes", ItemTags.class)
+        );
+
+        // the content of this map is used for copying the tag content from
+        // another tag in code - this is a very simple structure currently,
+        // forward references are simple not checked
+        Map<TagContent, String> copyRefs = new HashMap<>();
+
+        for (TagType tagType : tagTypes) {
+            // look at order of mc fields, this is required for the tags
+            // to have consistent ordering
+            //
+            // the paths of the specific tag are populated later
+            Map<ResourceLocation, List<Path>> tagPaths = new LinkedHashMap<>();
+            for (Field field : tagType.mcClass().getFields()) {
+                if (!Modifier.isPublic(field.getModifiers())
+                        || !Modifier.isStatic(field.getModifiers())
+                        || !Modifier.isFinal(field.getModifiers())) {
+                    continue;
+                }
+
+                try {
+                    TagKey<?> key = (TagKey<?>) field.get(null);
+                    tagPaths.put(key.location(), new ArrayList<>());
+                } catch (IllegalAccessException exception) {
+                    throw new RuntimeException(exception);
+                }
+            }
+
+            // populate tag paths with data generated content
+            for (Path tagRootDir : tagDirs) {
+                Path tagDir = tagRootDir.resolve(tagType.registryName().getPath()); // TODO
+                if (!Files.isDirectory(tagDir)) {
+                    continue; // doesn't exist
+                }
+
+                // walk tag dir, nested tags are allowed in minecraft
+                try (Stream<Path> tree = Files.walk(tagDir)) {
+                    tree.filter(Files::isRegularFile).forEach(path -> {
+                        String tagPath = tagDir.relativize(path).toString();
+                        tagPath = tagPath.substring(0, tagPath.length() - ".json".length());
+                        ResourceLocation tagName = new ResourceLocation(tagPath);
+                        tagPaths.get(tagName).add(path); // add path to tag
+                    });
+                }
+            }
+
+            // accumulate tags from every result
+            Map<ResourceLocation, Tag> tagObjs = new LinkedHashMap<>();
+            for (Map.Entry<ResourceLocation, List<Path>> entry : tagPaths.entrySet()) {
+                // read values from every file
+                JsonArray values = new JsonArray();
+                for (Path path : entry.getValue()) {
+                    JsonObject tagContents = GenerationUtil.loadJsonElement(path, JsonObject.class);
+                    values.addAll(tagContents.remove("values").getAsJsonArray());
+                    Preconditions.checkState(tagContents.isEmpty(), "%s != empty", tagContents);
+                }
+
+                // build tag from read values
+                TagContent content = new TagContent();
+                for (JsonElement elem : values) {
+                    content.add(elem.getAsString());
+                }
+                Tag tag = new Tag(tagType, entry.getKey(), content);
+                tagObjs.put(tag.name, tag);
+            }
+
+            // build parent structure, required for correct ordering
+            for (Map.Entry<ResourceLocation, Tag> entry : tagObjs.entrySet()) {
+                for (ResourceLocation tag : entry.getValue().content.tags()) {
+                    entry.getValue().parents.add(tagObjs.get(tag));
+                }
+            }
+
+            // open output path for writing down tag code
+            Path outPath = genOutDir.resolve(GenerationUtil.toString(tagType.registryName()) + ".txt");
+            try (BufferedWriter writer = Files.newBufferedWriter(outPath)) {
+                // this ensures everything gets written in correct order by
+                // first looping through all tags with no parents,
+                // then removing the processed tags as a parent from everywhere
+                // until every tag has been processed
+                while (!tagObjs.isEmpty()) {
+                    List<Tag> roots = tagObjs.values().stream()
+                            .filter(tag -> tag.parents.isEmpty())
+                            .toList();
+                    if (roots.isEmpty()) {
+                        // when tags are still present and everyone still has
+                        // unprocessed parents, some sort of self-loop is present
+                        // just throw errors, this can't be recovered
+                        throw new IllegalStateException("Self-loop in remaining tags detected: " + tagObjs.keySet());
+                    }
+
+                    // finally, output the current set of roots
+                    for (Tag root : roots) {
+                        writer.write(root.asString(copyRefs));
+                        writer.newLine();
+                    }
+
+                    // remove roots from everywhere - they have been successfully processed
+                    tagObjs.values().removeAll(roots);
+                    for (Tag tag : tagObjs.values()) {
+                        tag.parents.removeAll(roots);
+                    }
+                }
+            }
+        }
+    }
+
+    // represents a type of tags supported by PacketEvents
+    private record TagType(
+            ResourceLocation registryName,
+            String tagsClass,
+            String typesClass,
+            Class<?> mcClass
+    ) {}
+
+    private record TagContent(List<ResourceLocation> tags, List<ResourceLocation> types) {
+
+        public TagContent() {
+            this(new ArrayList<>(), new ArrayList<>());
+        }
+
+        public void add(String string) {
+            if (string.indexOf('#') == 0) { // tag identifier
+                this.tags.add(new ResourceLocation(string.substring(1)));
+            } else { // normal type entry
+                this.types.add(new ResourceLocation(string));
+            }
+        }
+    }
+
+    private static final class Tag {
+
+        private final TagType tagType;
+        private final ResourceLocation name;
+        private final TagContent content;
+
+        // used for sorting tags to counter forward references
+        private final List<Tag> parents = new ArrayList<>();
+
+        private Tag(TagType tagType, ResourceLocation name, TagContent content) {
+            this.tagType = tagType;
+            this.name = name;
+            this.content = content;
+        }
+
+        public String asString(Map<TagContent, String> copyRefs) {
+            // build common self reference string
+            String selfRef = buildTagRef(this.tagType, this.name);
+
+            // first check if this tag can just be copied
+            String copyRef = copyRefs.get(this.content);
+            if (copyRef != null) {
+                return "copy(" + copyRef + ", " + selfRef + ");";
+            }
+            // register as a reference for copying
+            // (not the best place for this, but it works and I don't care)
+            copyRefs.put(this.content, selfRef);
+
+            // not able to copy - build tag string
+            StringBuilder builder = new StringBuilder(selfRef);
+            for (ResourceLocation tag : this.content.tags()) {
+                builder.append(".addTag(").append(buildTagRef(this.tagType, tag)).append(')');
+            }
+            if (!this.content.types().isEmpty()) {
+                String joined = this.content.types().stream()
+                        .map(entry -> buildTypeRef(this.tagType, entry))
+                        .collect(Collectors.joining(", "));
+                builder.append(".add(").append(joined).append(')');
+            }
+            return builder.append(';').toString();
+        }
     }
 }
