@@ -4,8 +4,11 @@ package dev.booky.generation.generators;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import dev.booky.generation.util.GenerationUtil;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 
 import java.io.IOException;
@@ -34,21 +37,31 @@ public final class RegistryGenerator implements IGenerator {
         GenerationUtil.saveJsonElement(generateJsonObject(registry), outPath);
     }
 
-    static <T> JsonArray generateJsonArray(Registry<T> registry) {
+    static <T> JsonArray generateJsonArray(HolderLookup<T> registry) {
         JsonArray arr = new JsonArray();
-        for (T element : registry) {
-            ResourceLocation elementKey = registry.getKey(element);
-            if (elementKey == null) {
-                throw new IllegalStateException("Illegal element " + element + " in " + registry + "; no key found");
-            }
-            arr.add(elementKey.getPath());
-        }
+        registry.listElementIds()
+                .map(ResourceKey::location)
+                .map(GenerationUtil::toString)
+                .forEach(arr::add);
         return arr;
     }
 
     private static void generateJsonArray(Path outDir, Registry<?> registry) throws IOException {
-        Path outPath = outDir.resolve(GenerationUtil.getRegistryName(registry) + ".json");
-        GenerationUtil.saveJsonElement(generateJsonArray(registry), outPath);
+        generateJsonArray(outDir, registry.asLookup(), GenerationUtil.getRegistryName(registry));
+    }
+
+    private static void generateJsonArray(Path outDir, ResourceKey<? extends Registry<?>> registryKey) throws IOException {
+        HolderLookup.RegistryLookup<Object> lookup = GenerationUtil.getVanillaRegistries().lookupOrThrow(registryKey);
+        generateJsonArray(outDir, lookup, registryKey);
+    }
+
+    private static void generateJsonArray(Path outDir, HolderLookup<?> lookup, ResourceKey<?> registryKey) throws IOException {
+        generateJsonArray(outDir, lookup, GenerationUtil.toString(registryKey.location()));
+    }
+
+    private static void generateJsonArray(Path outDir, HolderLookup<?> lookup, String registryKey) throws IOException {
+        Path outPath = outDir.resolve(registryKey + ".json");
+        GenerationUtil.saveJsonElement(generateJsonArray(lookup), outPath);
     }
 
     @Override
@@ -62,5 +75,6 @@ public final class RegistryGenerator implements IGenerator {
         generateJsonArray(outDir, BuiltInRegistries.PARTICLE_TYPE);
         generateJsonArray(outDir, BuiltInRegistries.ATTRIBUTE);
         generateJsonArray(outDir, BuiltInRegistries.BLOCK);
+        generateJsonArray(outDir, Registries.CHAT_TYPE);
     }
 }

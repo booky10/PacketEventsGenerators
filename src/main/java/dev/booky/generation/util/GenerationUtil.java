@@ -4,8 +4,10 @@ package dev.booky.generation.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceLocation;
 
 import java.io.BufferedReader;
@@ -22,8 +24,13 @@ public final class GenerationUtil {
             .disableHtmlEscaping()
             .setPrettyPrinting()
             .create();
+    private static final HolderLookup.Provider VANILLA_REGISTRIES = VanillaRegistries.createLookup();
 
     private GenerationUtil() {
+    }
+
+    public static HolderLookup.Provider getVanillaRegistries() {
+        return VANILLA_REGISTRIES;
     }
 
     public static JsonElement loadJsonElement(Path path) throws IOException {
