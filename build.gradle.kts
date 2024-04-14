@@ -12,6 +12,13 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+}
+
 minecraft {
     version(project.ext["mcVersion"] as String)
     platform(MinecraftPlatform.SERVER)
