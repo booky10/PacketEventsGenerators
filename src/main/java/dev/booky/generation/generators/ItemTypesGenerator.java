@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import dev.booky.generation.util.GenerationUtil;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.AxeItem;
@@ -30,6 +32,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static net.minecraft.core.component.DataComponents.FOOD;
+import static net.minecraft.core.component.DataComponents.MAX_DAMAGE;
 
 public final class ItemTypesGenerator implements IGenerator {
 
@@ -83,12 +88,14 @@ public final class ItemTypesGenerator implements IGenerator {
                 writer.write("\")");
 
                 Item item = BuiltInRegistries.ITEM.get(addedItem);
+                DataComponentMap components = item.components(); // default components
                 writer.write(".setMaxAmount(");
-                writer.write(Integer.toString(item.getMaxStackSize()));
+                writer.write(Integer.toString(item.getDefaultMaxStackSize()));
                 writer.write(')');
-                if (item.getMaxDamage() > 0) {
+                Integer maxDamage = components.get(MAX_DAMAGE);
+                if (maxDamage != null) {
                     writer.write(".setMaxDurability(");
-                    writer.write(Integer.toString(item.getMaxDamage()));
+                    writer.write(Integer.toString(maxDamage));
                     writer.write(')');
                 }
                 if (item instanceof BlockItem blockItem) {
@@ -117,8 +124,8 @@ public final class ItemTypesGenerator implements IGenerator {
     public enum ItemAttribute {
 
         MUSIC_DISC(item -> item instanceof RecordItem),
-        EDIBLE(item -> item.getFoodProperties() != null),
-        FIRE_RESISTANT(Item::isFireResistant),
+        EDIBLE(item -> item.components().has(FOOD)),
+        FIRE_RESISTANT(item -> item.components().has(DataComponents.FIRE_RESISTANT)),
         WOOD_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.WOOD),
         STONE_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.STONE),
         IRON_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.IRON),
