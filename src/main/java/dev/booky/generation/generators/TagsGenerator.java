@@ -240,6 +240,10 @@ public final class TagsGenerator implements IGenerator {
                 this.types.add(new ResourceLocation(string));
             }
         }
+
+        public boolean isEmpty() {
+            return this.types.isEmpty() && this.tags.isEmpty();
+        }
     }
 
     private static final class Tag {
@@ -260,6 +264,11 @@ public final class TagsGenerator implements IGenerator {
         public String asString(Map<TagContent, String> copyRefs) {
             // build common self reference string
             String selfRef = buildTagRef(this.tagType, this.name);
+
+            // prevent compile errors if empty
+            if (this.content.isEmpty()) {
+                return "copy(null, " + selfRef + ");";
+            }
 
             // first check if this tag can just be copied
             String copyRef = copyRefs.get(this.content);
