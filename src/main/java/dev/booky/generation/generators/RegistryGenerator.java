@@ -75,6 +75,10 @@ public final class RegistryGenerator implements IGenerator {
         generateJsonArray(outDir, BuiltInRegistries.PARTICLE_TYPE);
         generateJsonArray(outDir, BuiltInRegistries.ATTRIBUTE);
         generateJsonArray(outDir, BuiltInRegistries.BLOCK);
+        generateJsonArray(outDir, BuiltInRegistries.BLOCK_ENTITY_TYPE);
+        generateJsonArray(outDir, BuiltInRegistries.DATA_COMPONENT_TYPE);
+        generateJsonArray(outDir, BuiltInRegistries.COMMAND_ARGUMENT_TYPE);
+        generateJsonArray(outDir, BuiltInRegistries.MOB_EFFECT);
         generateJsonArray(outDir, Registries.CHAT_TYPE);
     }
 }
