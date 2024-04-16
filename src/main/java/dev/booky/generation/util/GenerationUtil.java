@@ -44,6 +44,7 @@ public final class GenerationUtil {
     }
 
     public static void saveJsonElement(JsonElement element, Path path) throws IOException {
+        Files.createDirectories(path.getParent());
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             GSON.toJson(element, writer);
         }
