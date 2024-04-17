@@ -63,6 +63,7 @@ public final class GenerationUtil {
         return toString(location)
                 .toUpperCase(Locale.ROOT)
                 .replace(File.separatorChar, '_') // remove nesting
+                .replace('.', '_') // remove dots
                 .replaceAll("__+", "_"); // remove adjacent underscores
     }
 

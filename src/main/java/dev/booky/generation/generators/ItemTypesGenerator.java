@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import dev.booky.generation.util.GenerationUtil;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -13,8 +14,15 @@ import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
@@ -28,6 +36,7 @@ import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.Tiers;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ChargedProjectiles;
@@ -42,8 +51,12 @@ import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.component.WritableBookContent;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.PotDecorations;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -53,13 +66,17 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static dev.booky.generation.util.GenerationUtil.asFieldName;
 import static net.minecraft.core.component.DataComponents.COMMON_ITEM_COMPONENTS;
 import static net.minecraft.core.component.DataComponents.CONTAINER_LOOT;
 import static net.minecraft.core.component.DataComponents.CUSTOM_DATA;
@@ -123,7 +140,7 @@ public final class ItemTypesGenerator implements IGenerator {
             for (ResourceLocation addedItem : addedItems) {
                 writer.newLine();
                 writer.write("public static final ItemType ");
-                writer.write(GenerationUtil.asFieldName(addedItem));
+                writer.write(asFieldName(addedItem));
                 writer.write(" = builder(\"");
                 writer.write(GenerationUtil.toString(addedItem));
                 writer.write("\")");
@@ -174,10 +191,9 @@ public final class ItemTypesGenerator implements IGenerator {
                                 BuiltInRegistries.DATA_COMPONENT_TYPE.getId(c.type())))
                         .toList()) {
                     writer.write(".setComponent(");
-                    writer.write(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(comp.type())
-                            .getPath().toUpperCase(Locale.ROOT));
+                    writer.write(asFieldName(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(comp.type())));
                     writer.write(", ");
-                    writer.write(stringifyCompVal(comp.value()));
+                    writer.write(c(comp.value()));
                     writer.write(')');
                 }
 
@@ -186,67 +202,96 @@ public final class ItemTypesGenerator implements IGenerator {
         }
     }
 
-    private static String stringifyCompVal(Object val) {
-        return (switch (val) {
+    private record Rgb(int rgb) {
+        @Override
+        public String toString() {
+            String hexStr = Integer.toHexString(this.rgb());
+            return "0x" + hexStr.toUpperCase(Locale.ROOT);
+        }
+    }
+
+    private static String c(@Nullable Object val) {
+        return switch (val) {
+            case Unit ignored -> c(null);
             case null -> "null";
-            case String ignored -> "\"" + val + "\"";
+            case String ignored -> "\"" + StringEscapeUtils.escapeJava(val.toString()) + "\"";
             case Integer ignored -> val.toString();
             case Boolean ignored -> val.toString();
+            case Float num -> (Math.round(num * 1000d) / 1000d) + "f";
+            case Double num -> (Math.round(num * 1000d) / 1000d) + "d";
+            case UUID id -> "UUID.fromString(\"" + id + "\")";
             case Rarity rarity -> "ItemRarity." + rarity.name();
+            case List<?> list -> list.isEmpty() ? "Collections.emptyList()" :
+                    "Arrays.asList(" + list.stream().map(ItemTypesGenerator::c)
+                            .collect(Collectors.joining(", ")) + ")";
+            case Stream<?> stream -> c(stream.toList());
+            case Holder<?> holder -> c(holder.value());
+            case Optional<?> optional -> c(optional.orElse(null));
+            case Rgb rgb -> rgb.toString();
+            case ResourceLocation loc -> ResourceLocation.DEFAULT_NAMESPACE.equals(loc.getNamespace())
+                    ? "ResourceLocation.minecraft(" + c(loc.getPath()) + ")"
+                    : "new ResourceLocation(" + c(loc.getNamespace()) + ", " + c(loc.getPath()) + ")";
+            case TagKey<?> tagKey -> c(tagKey.location());
+            case ResourceKey<?> resKey -> c(resKey.location());
+            case HolderSet<?> holders -> "new MappedEntitySet<>(" + holders.unwrap()
+                    .map(ItemTypesGenerator::c, ItemTypesGenerator::c) + ")";
             case ItemEnchantments enchantments -> {
                 boolean showInTooltip = ((CompoundTag) ItemEnchantments.CODEC.encodeStart(NbtOps.INSTANCE, enchantments)
                         .getOrThrow()).getBoolean("show_in_tooltip");
                 yield "new ItemEnchantments(Collections.emptyMap()" + (enchantments.isEmpty() ? "" : "/*FIXME*/") + ", " + showInTooltip + ")";
             }
-            case ItemAttributeModifiers mods -> "new ItemAttributeModifiers(Arrays.asList(" + mods.modifiers().stream()
-                    .map(mod -> {
-                        String attr = "Attributes." + BuiltInRegistries.ATTRIBUTE.getKey(mod.attribute().value()).getPath().toUpperCase(Locale.ROOT).replace('.', '_');
-                        String op = "AttributeOperation." + switch (mod.modifier().operation()) {
-                            case ADD_VALUE -> "ADDITION";
-                            case ADD_MULTIPLIED_BASE -> "MULTIPLY_BASE";
-                            case ADD_MULTIPLIED_TOTAL -> "MULTIPLY_TOTAL";
-                        };
-                        String submod = "new ItemAttributeModifiers.Modifier(UUID.fromString\"" + mod.modifier().id() + "\", \"" + mod.modifier().name() + "\", " + (Math.round(mod.modifier().amount() * 1000d) / 1000d) + "d, " + op + ")";
-                        String slot = "EquipmentSlotGroup." + mod.slot().name();
-                        return "new ItemAttributeModifiers.ModifierEntry(" + attr + ", " + submod + ", " + slot + ")";
-                    })
-                    .collect(Collectors.joining(", ")) + "), " + mods.showInTooltip() + ")";
-            case FoodProperties props ->
-                    "new FoodProperties(" + props.nutrition() + ", " + (Math.round(props.saturation() * 1000d) / 1000d) + "f, " + props.canAlwaysEat() + ", " + (Math.round(props.eatSeconds() * 1000d) / 1000d) + "f, Arrays.asList(" + props.effects().stream()
-                            .map(eff -> "new FoodProperties.PossibleEffect(" + stringifyCompVal(eff.effect()) + ", " + (Math.round(eff.probability() * 1000d) / 1000d) + "f)")
-                            .collect(Collectors.joining(", ")) + "))";
-            // TODO effect
-            case Tool t -> "new ItemTool(Arrays.asList(" + t.rules().stream()
-                    .map(r -> "new ItemTool.Rule(new MappedEntitySet<>(" + r.blocks().unwrap().map(l -> "ResourceLocation.minecraft(\"" + l.location().getPath() + "\")", i -> "Arrays.asList(" + i.stream().map(b -> BuiltInRegistries.BLOCK.getKey(b.value()).getPath().toUpperCase(Locale.ROOT)).map(a -> "StateTypes." + a + ".getMapped()").collect(Collectors.joining(", ")) + ")") + "), " + r.speed().map(s -> (Math.round(s * 1000d) / 1000d) + "f").orElse("null") + ", " + r.correctForDrops().map(Object::toString).orElse("null") + ")")
-                    .collect(Collectors.joining(", ")) + "), " + (Math.round(t.defaultMiningSpeed() * 1000d) / 1000d) + "f, " + t.damagePerBlock() + ")";
-            case DyedItemColor color ->
-                    "new ItemDyeColor(0x" + Integer.toHexString(color.rgb()).toUpperCase(Locale.ROOT) + ", " + color.showInTooltip() + ")";
+            case ItemAttributeModifiers mods -> "new ItemAttributeModifiers(" + c(mods.modifiers())
+                    + ", " + mods.showInTooltip() + ")";
+            case ItemAttributeModifiers.Entry entry -> "new ItemAttributeModifiers.ModifierEntry("
+                    + c(entry.attribute()) + ", " + c(entry.modifier()) + ", " + c(entry.slot()) + ")";
+            case Attribute attribute -> "Attributes." + asFieldName(BuiltInRegistries.ATTRIBUTE.getKey(attribute));
+            case EquipmentSlotGroup esg -> "ItemAttributeModifiers.EquipmentSlotGroup." + esg.name();
+            case AttributeModifier.Operation op -> "AttributeOperation." + switch (op) {
+                case ADD_VALUE -> "ADDITION";
+                case ADD_MULTIPLIED_BASE -> "MULTIPLY_BASE";
+                case ADD_MULTIPLIED_TOTAL -> "MULTIPLY_TOTAL";
+            };
+            case AttributeModifier mod -> "new ItemAttributeModifiers.Modifier(" + c(mod.id()) + ", " + c(mod.name())
+                    + ", " + c(mod.amount()) + ", " + c(mod.operation()) + ")";
+            case FoodProperties props -> "new FoodProperties(" + props.nutrition() + ", " + c(props.saturation()) + ", "
+                    + props.canAlwaysEat() + ", " + c(props.eatSeconds()) + ", " + c(props.effects()) + ")";
+            case FoodProperties.PossibleEffect eff -> "new FoodProperties.PossibleEffect(" + c(eff.effect())
+                    + ", " + c(eff.probability()) + ")";
+            case MobEffectInstance eff -> "new PotionEffect("
+                    + c(eff.getEffect()) + ", " + c(eff.asDetails()) + ")";
+            case MobEffectInstance.Details eff -> "new PotionEffect.Properties(" + eff.amplifier()
+                    + ", " + eff.duration() + ", " + eff.ambient() + ", " + eff.showParticles()
+                    + ", " + eff.showIcon() + ", " + c(eff.hiddenEffect()) + ")";
+            case MobEffect eff -> "PotionTypes." + asFieldName(BuiltInRegistries.MOB_EFFECT.getKey(eff));
+            case Tool t -> "new ItemTool(" + c(t.rules()) + ", "
+                    + c(t.defaultMiningSpeed()) + ", " + t.damagePerBlock() + ")";
+            case Block block -> "StateTypes." + asFieldName(
+                    BuiltInRegistries.BLOCK.getKey(block)) + ".getMapped()";
+            case Tool.Rule rule -> "new ItemTool.Rule(" + c(rule.blocks())
+                    + ", " + c(rule.speed()) + ", " + c(rule.correctForDrops()) + ")";
+            case DyedItemColor color -> "new ItemDyeColor(" + c(new Rgb(color.rgb()))
+                    + ", " + color.showInTooltip() + ")";
             case DyeColor color -> "DyeColor." + color.name();
             case MapPostProcessing mpp -> "ItemMapPostProcessingState." + switch (mpp) {
                 case LOCK -> "LOCKED";
                 case SCALE -> "SCALED";
             };
-            case SuspiciousStewEffects e ->
-                    "new SuspiciousStewEffects(Arrays.asList()" + (e.effects().isEmpty() ? "" : "/*FIXME*/") + ")";
-            case WritableBookContent c ->
-                    "new WritableBookContent(Arrays.asList()" + (!c.pages().isEmpty() ? "/*FIXME*/" : "") + ")";
-            case BannerPatternLayers l ->
-                    "new BannerLayers(Arrays.asList()" + (!l.layers().isEmpty() ? "/*FIXME*/" : "") + ")";
-            case PotionContents p ->
-                    "new ItemPotionContents(" + p.potion().map(h -> "Potions." + BuiltInRegistries.POTION.getKey(h.value()).getPath().toUpperCase(Locale.ROOT)).orElse("null") + ", " + p.customColor().map(i -> "0x" + Integer.toHexString(i).toUpperCase(Locale.ROOT)).orElse("null") + ", Arrays.asList(" + p.customEffects().stream().map(f -> stringifyCompVal(f)).collect(Collectors.joining(", ")) + "))";
-            case ItemContainerContents c ->
-                    "new ItemContainerContents(Arrays.asList(" + c.stream().map(ItemTypesGenerator::stringifyCompVal).collect(Collectors.joining(", ")) + "))";
-            case Unit ignored -> "null";
+            case SuspiciousStewEffects e -> "new SuspiciousStewEffects(" + c(e.effects()) + ")";
+            case WritableBookContent c -> "new WritableBookContent(" + c(c.pages()) + ")";
+            case BannerPatternLayers l -> "new BannerLayers(" + c(l.layers()) + ")";
+            case PotionContents p -> "new ItemPotionContents(" + c(p.potion()) + ", "
+                    + c(p.customColor().map(Rgb::new)) + ", " + c(p.customEffects()) + ")";
+            case Potion p -> "Potions." + asFieldName(BuiltInRegistries.POTION.getKey(p));
+            case ItemContainerContents c -> "new ItemContainerContents(" + c(c.stream()) + ")";
             case CustomData d -> d.isEmpty() ? "new NBTCompound()" : "\"" + d + "\"/*FIXME*/";
-            case BundleContents b ->
-                    "new BundleContents(Arrays.asList(" + b.itemCopyStream().map(ItemTypesGenerator::stringifyCompVal).collect(Collectors.joining(", ")) + "))";
-            case Fireworks f ->
-                    "new ItemFireworks(" + f.flightDuration() + ", Arrays.asList(" + f.explosions().stream().map(ItemTypesGenerator::stringifyCompVal).collect(Collectors.joining(", ")) + "))";
-            case MapItemColor c -> "0x" + Integer.toHexString(c.rgb()).toUpperCase(Locale.ROOT);
-            case ChargedProjectiles p ->
-                    "new ChargedProjectiles(Arrays.asList(" + p.getItems().stream().map(ItemTypesGenerator::stringifyCompVal).collect(Collectors.joining(", ")) + "))";
-            default -> val + "/*FIXME*/";
-        }).replace("Arrays.asList()", "Collections.emptyList()");
+            case BundleContents b -> "new BundleContents(" + c(b.itemCopyStream()) + ")";
+            case Fireworks f -> "new ItemFireworks(" + f.flightDuration() + ", " + c(f.explosions()) + ")";
+            case MapItemColor c -> c(new Rgb(c.rgb()));
+            case ChargedProjectiles p -> "new ChargedProjectiles(" + c(p.getItems()) + ")";
+            case PotDecorations d -> "new PotDecorations(" + c(d.back()) + ", " + c(d.left())
+                    + ", " + c(d.right()) + ", " + c(d.front()) + ")";
+            default -> "/*FIXME: " + val + "*/";
+        };
     }
 
     public enum ItemAttribute {

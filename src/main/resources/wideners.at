@@ -2,3 +2,7 @@ accessWidener	v1	named
 
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties hasCollision Z
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties requiresCorrectToolForDrops Z
+
+accessible class net/minecraft/world/effect/MobEffectInstance$Details
+
+accessible method net/minecraft/world/effect/MobEffectInstance asDetails ()Lnet/minecraft/world/effect/MobEffectInstance$Details;
