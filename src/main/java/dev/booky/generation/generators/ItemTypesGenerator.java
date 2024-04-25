@@ -129,8 +129,8 @@ public final class ItemTypesGenerator implements IGenerator {
             writer.newLine();
 
             // determine which items have been added compared to input
-            Set<ResourceLocation> addedItems = new LinkedHashSet<>(items);
-            addedItems.removeAll(prevItems);
+            Set<ResourceLocation> addedItems = new LinkedHashSet<>(prevItems);
+//            addedItems.removeAll(prevItems);
             writer.write("// Added items (");
             writer.write(SharedConstants.getCurrentVersion().getName());
             writer.write("): ");
@@ -217,8 +217,8 @@ public final class ItemTypesGenerator implements IGenerator {
             UUID.fromString("9F3D476D-C118-4544-8365-64846904B48E"), "ARMOR_MODIFIER_CHESTPLATE_UUID",
             UUID.fromString("2AD3F246-FEE1-4E67-B886-69FD380BB150"), "ARMOR_MODIFIER_HELMET_UUID",
             UUID.fromString("C1C72771-8B8E-BA4A-ACE0-81A93C8928B2"), "ARMOR_MODIFIER_BODY_UUID",
-            UUID.fromString("CB3F55D3-645C-4F38-A497-9C13A33DB5CF"), "ARMOR_MODIFIER_ATTACK_DAMAGE_UUID",
-            UUID.fromString("FA233E1C-4180-4865-B01B-BCCE9785ACA3"), "ARMOR_MODIFIER_ATTACK_SPEED_UUID"
+            UUID.fromString("CB3F55D3-645C-4F38-A497-9C13A33DB5CF"), "TOOL_MODIFIER_ATTACK_DAMAGE_UUID",
+            UUID.fromString("FA233E1C-4180-4865-B01B-BCCE9785ACA3"), "TOOL_MODIFIER_ATTACK_SPEED_UUID"
     );
 
     private static String c(@Nullable Object val) {
