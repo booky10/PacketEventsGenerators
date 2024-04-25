@@ -68,6 +68,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -210,6 +211,16 @@ public final class ItemTypesGenerator implements IGenerator {
         }
     }
 
+    private static final Map<UUID, String> UUID_FIELD_NAMES = Map.of(
+            UUID.fromString("845DB27C-C624-495F-8C9F-6020A9A58B6B"), "ARMOR_MODIFIER_BOOTS_UUID",
+            UUID.fromString("D8499B04-0E66-4726-AB29-64469D734E0D"), "ARMOR_MODIFIER_LEGGINGS_UUID",
+            UUID.fromString("9F3D476D-C118-4544-8365-64846904B48E"), "ARMOR_MODIFIER_CHESTPLATE_UUID",
+            UUID.fromString("2AD3F246-FEE1-4E67-B886-69FD380BB150"), "ARMOR_MODIFIER_HELMET_UUID",
+            UUID.fromString("C1C72771-8B8E-BA4A-ACE0-81A93C8928B2"), "ARMOR_MODIFIER_BODY_UUID",
+            UUID.fromString("CB3F55D3-645C-4F38-A497-9C13A33DB5CF"), "ARMOR_MODIFIER_ATTACK_DAMAGE_UUID",
+            UUID.fromString("FA233E1C-4180-4865-B01B-BCCE9785ACA3"), "ARMOR_MODIFIER_ATTACK_SPEED_UUID"
+    );
+
     private static String c(@Nullable Object val) {
         return switch (val) {
             case Unit ignored -> c(null);
@@ -219,7 +230,7 @@ public final class ItemTypesGenerator implements IGenerator {
             case Boolean ignored -> val.toString();
             case Float num -> (Math.round(num * 1000d) / 1000d) + "f";
             case Double num -> (Math.round(num * 1000d) / 1000d) + "d";
-            case UUID id -> "UUID.fromString(\"" + id + "\")";
+            case UUID id -> UUID_FIELD_NAMES.getOrDefault(id, "UUID.fromString(\"" + id + "\")");
             case Rarity rarity -> "ItemRarity." + rarity.name();
             case List<?> list -> list.isEmpty() ? "Collections.emptyList()" :
                     "Arrays.asList(" + list.stream().map(ItemTypesGenerator::c)
