@@ -3,6 +3,7 @@ package dev.booky.generation.generators;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.logging.LogUtils;
 import dev.booky.generation.util.GenerationUtil;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
@@ -70,7 +71,6 @@ public final class RegistryGenerator implements IGenerator {
         Files.createDirectories(outDir);
 
         generateJsonObject(outDir, BuiltInRegistries.ENTITY_TYPE);
-        generateJsonObject(outDir, BuiltInRegistries.ENCHANTMENT);
         generateJsonObject(outDir, BuiltInRegistries.ITEM);
         generateJsonArray(outDir, BuiltInRegistries.PARTICLE_TYPE);
         generateJsonArray(outDir, BuiltInRegistries.ATTRIBUTE);
@@ -80,5 +80,18 @@ public final class RegistryGenerator implements IGenerator {
         generateJsonArray(outDir, BuiltInRegistries.COMMAND_ARGUMENT_TYPE);
         generateJsonArray(outDir, BuiltInRegistries.MOB_EFFECT);
         generateJsonArray(outDir, Registries.CHAT_TYPE);
+        generateJsonArray(outDir, Registries.ENCHANTMENT);
+
+        Path allDir = outDir.resolve("all");
+        for (ResourceKey<?> registryKey : ResourceKey.VALUES.values()) {
+            if (!Registries.ROOT_REGISTRY_NAME.equals(registryKey.registry())) {
+                continue;
+            }
+            try {
+                generateJsonArray(allDir, (ResourceKey<Registry<?>>) registryKey);
+            } catch (Throwable throwable) {
+                LogUtils.getLogger().error(throwable.toString(), throwable);
+            }
+        }
     }
 }

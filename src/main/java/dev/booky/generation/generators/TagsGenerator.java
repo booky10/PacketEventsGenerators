@@ -10,12 +10,8 @@ import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.WorldVersion;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
-import net.minecraft.data.tags.UpdateOneTwentyOneBlockTagsProvider;
-import net.minecraft.data.tags.UpdateOneTwentyOneItemTagsProvider;
 import net.minecraft.data.tags.VanillaBlockTagsProvider;
 import net.minecraft.data.tags.VanillaItemTagsProvider;
 import net.minecraft.resources.ResourceLocation;
@@ -53,19 +49,8 @@ public final class TagsGenerator implements IGenerator {
                 VanillaRegistries::createLookup, Util.backgroundExecutor());
         VanillaBlockTagsProvider vanillaBlockTags = vanilla.addProvider(output ->
                 new VanillaBlockTagsProvider(output, vanillaRegistryFuture));
-        VanillaItemTagsProvider vanillaItemTags = vanilla.addProvider(output ->
+        vanilla.addProvider(output ->
                 new VanillaItemTagsProvider(output, vanillaRegistryFuture, vanillaBlockTags.contentsGetter()));
-
-        CompletableFuture<RegistrySetBuilder.PatchedRegistries> update121RegistryFuture =
-                UpdateOneTwentyOneRegistries.createLookup(vanillaRegistryFuture);
-        CompletableFuture<HolderLookup.Provider> update121PatcherRegistryFuture =
-                update121RegistryFuture.thenApply(RegistrySetBuilder.PatchedRegistries::patches);
-
-        DataGenerator.PackGenerator update121 = generator.getBuiltinDatapack(true, "update_1_21");
-        UpdateOneTwentyOneBlockTagsProvider update121BlockTags = update121.addProvider(output ->
-                new UpdateOneTwentyOneBlockTagsProvider(output, update121PatcherRegistryFuture, vanillaBlockTags.contentsGetter()));
-        update121.addProvider(output -> new UpdateOneTwentyOneItemTagsProvider(output,
-                update121PatcherRegistryFuture, vanillaItemTags.contentsGetter(), update121BlockTags.contentsGetter()));
 
         generator.run();
     }
