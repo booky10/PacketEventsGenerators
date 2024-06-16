@@ -95,8 +95,8 @@ public final class TagsGenerator implements IGenerator {
 
         // build info data for available tag types - PacketEvents only supports blocks/items at the moment
         List<TagType> tagTypes = List.of(
-                new TagType(new ResourceLocation("blocks"), "BlockTags", "StateTypes", BlockTags.class),
-                new TagType(new ResourceLocation("items"), "ItemTags", "ItemTypes", ItemTags.class)
+                new TagType(ResourceLocation.withDefaultNamespace("blocks"), "BlockTags", "StateTypes", BlockTags.class),
+                new TagType(ResourceLocation.withDefaultNamespace("items"), "ItemTags", "ItemTypes", ItemTags.class)
         );
 
         // the content of this map is used for copying the tag content from
@@ -137,7 +137,7 @@ public final class TagsGenerator implements IGenerator {
                     tree.filter(Files::isRegularFile).forEach(path -> {
                         String tagPath = tagDir.relativize(path).toString();
                         tagPath = tagPath.substring(0, tagPath.length() - ".json".length());
-                        ResourceLocation tagName = new ResourceLocation(tagPath);
+                        ResourceLocation tagName = ResourceLocation.parse(tagPath);
                         tagPaths.get(tagName).add(path); // add path to tag
                     });
                 }
@@ -220,9 +220,9 @@ public final class TagsGenerator implements IGenerator {
 
         public void add(String string) {
             if (string.indexOf('#') == 0) { // tag identifier
-                this.tags.add(new ResourceLocation(string.substring(1)));
+                this.tags.add(ResourceLocation.parse(string.substring(1)));
             } else { // normal type entry
-                this.types.add(new ResourceLocation(string));
+                this.types.add(ResourceLocation.parse(string));
             }
         }
 

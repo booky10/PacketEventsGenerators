@@ -31,7 +31,6 @@ import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
@@ -84,6 +83,7 @@ import static net.minecraft.core.component.DataComponents.CUSTOM_DATA;
 import static net.minecraft.core.component.DataComponents.DEBUG_STICK_STATE;
 import static net.minecraft.core.component.DataComponents.FOOD;
 import static net.minecraft.core.component.DataComponents.INTANGIBLE_PROJECTILE;
+import static net.minecraft.core.component.DataComponents.JUKEBOX_PLAYABLE;
 import static net.minecraft.core.component.DataComponents.LOCK;
 import static net.minecraft.core.component.DataComponents.MAP_DECORATIONS;
 import static net.minecraft.core.component.DataComponents.MAX_DAMAGE;
@@ -114,7 +114,7 @@ public final class ItemTypesGenerator implements IGenerator {
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
             // read inputs
             Set<ResourceLocation> prevItems = GenerationUtil.loadJsonElement(inputPath, JsonObject.class).keySet().stream()
-                    .map(String::toLowerCase).map(ResourceLocation::new).collect(Collectors.toCollection(LinkedHashSet::new));
+                    .map(String::toLowerCase).map(ResourceLocation::parse).collect(Collectors.toCollection(LinkedHashSet::new));
             Set<ResourceLocation> items = BuiltInRegistries.ITEM.stream()
                     .map(BuiltInRegistries.ITEM::getKey)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -262,7 +262,7 @@ public final class ItemTypesGenerator implements IGenerator {
                 case ADD_MULTIPLIED_BASE -> "MULTIPLY_BASE";
                 case ADD_MULTIPLIED_TOTAL -> "MULTIPLY_TOTAL";
             };
-            case AttributeModifier mod -> "new ItemAttributeModifiers.Modifier(" + c(mod.id()) + ", " + c(mod.name())
+            case AttributeModifier mod -> "new ItemAttributeModifiers.Modifier(" + c(mod.id()) + ", " + c(mod.id())
                     + ", " + c(mod.amount()) + ", " + c(mod.operation()) + ")";
             case FoodProperties props -> "new FoodProperties(" + props.nutrition() + ", " + c(props.saturation()) + ", "
                     + props.canAlwaysEat() + ", " + c(props.eatSeconds()) + ", " + c(props.effects()) + ")";
@@ -307,7 +307,7 @@ public final class ItemTypesGenerator implements IGenerator {
 
     public enum ItemAttribute {
 
-        MUSIC_DISC(item -> item instanceof RecordItem),
+        MUSIC_DISC(item -> item.components().has(JUKEBOX_PLAYABLE)),
         EDIBLE(item -> item.components().has(FOOD)),
         FIRE_RESISTANT(item -> item.components().has(DataComponents.FIRE_RESISTANT)),
         WOOD_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.WOOD),

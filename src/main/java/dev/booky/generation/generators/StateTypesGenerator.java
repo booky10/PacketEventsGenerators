@@ -40,7 +40,7 @@ public class StateTypesGenerator implements IGenerator {
             // read inputs
             Set<ResourceLocation> prevBlocks = GenerationUtil.loadJsonElement(inputPath, JsonArray.class)
                     .asList().stream()
-                    .map(JsonElement::getAsString).map(ResourceLocation::new)
+                    .map(JsonElement::getAsString).map(ResourceLocation::parse)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             Set<ResourceLocation> blocks = BuiltInRegistries.BLOCK.stream()
                     .map(BuiltInRegistries.BLOCK::getKey)
