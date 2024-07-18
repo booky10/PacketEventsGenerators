@@ -2,7 +2,7 @@ import org.spongepowered.gradle.vanilla.repository.MinecraftPlatform
 
 plugins {
     id("java-library")
-    id("org.spongepowered.gradle.vanilla") version "0.2.1-SNAPSHOT"
+    org.spongepowered.gradle.vanilla
 }
 
 group = "dev.booky"
