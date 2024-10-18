@@ -48,7 +48,7 @@ public final class RegistryGenerator implements IGenerator {
     }
 
     private static void generateJsonArray(Path outDir, Registry<?> registry) throws IOException {
-        generateJsonArray(outDir, registry.asLookup(), GenerationUtil.getRegistryName(registry));
+        generateJsonArray(outDir, registry, GenerationUtil.getRegistryName(registry));
     }
 
     private static void generateJsonArray(Path outDir, ResourceKey<? extends Registry<?>> registryKey) throws IOException {

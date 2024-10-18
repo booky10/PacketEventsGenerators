@@ -73,7 +73,7 @@ public class StateTypesGenerator implements IGenerator {
                 writer.write(GenerationUtil.toString(addedBlock));
                 writer.write("\")");
 
-                Block block = BuiltInRegistries.BLOCK.get(addedBlock);
+                Block block = BuiltInRegistries.BLOCK.get(addedBlock).orElseThrow().value();
                 writer.write(".blastResistance(" + block.getExplosionResistance() + "f)");
                 writer.write(".hardness(" + block.defaultDestroyTime() + "f)");
                 writer.write(".isBlocking(" + block.properties().hasCollision + ")");

@@ -4,11 +4,11 @@ package dev.booky.generation.generators;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import dev.booky.generation.util.GenerationUtil;
+import net.minecraft.Optionull;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,6 +16,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
 import net.minecraft.world.effect.MobEffect;
@@ -23,6 +24,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
@@ -33,8 +35,6 @@ import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.TieredItem;
-import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.BundleContents;
@@ -51,8 +51,8 @@ import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.component.WritableBookContent;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
+import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.entity.PotDecorations;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jetbrains.annotations.Nullable;
@@ -78,26 +78,17 @@ import java.util.stream.Stream;
 
 import static dev.booky.generation.util.GenerationUtil.asFieldName;
 import static net.minecraft.core.component.DataComponents.COMMON_ITEM_COMPONENTS;
-import static net.minecraft.core.component.DataComponents.CONTAINER_LOOT;
-import static net.minecraft.core.component.DataComponents.CUSTOM_DATA;
-import static net.minecraft.core.component.DataComponents.DEBUG_STICK_STATE;
 import static net.minecraft.core.component.DataComponents.FOOD;
-import static net.minecraft.core.component.DataComponents.INTANGIBLE_PROJECTILE;
 import static net.minecraft.core.component.DataComponents.JUKEBOX_PLAYABLE;
-import static net.minecraft.core.component.DataComponents.LOCK;
-import static net.minecraft.core.component.DataComponents.MAP_DECORATIONS;
 import static net.minecraft.core.component.DataComponents.MAX_DAMAGE;
 import static net.minecraft.core.component.DataComponents.MAX_STACK_SIZE;
-import static net.minecraft.core.component.DataComponents.RECIPES;
 
 public final class ItemTypesGenerator implements IGenerator {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final Set<DataComponentType<?>> UNSYNCHRONIZED_TYPES = Set.of(
-            CUSTOM_DATA, INTANGIBLE_PROJECTILE, MAP_DECORATIONS, DEBUG_STICK_STATE,
-            RECIPES, LOCK, CONTAINER_LOOT
-    );
+    private static final FuelValues VANILLA_FUEL_VALUES = FuelValues.vanillaBurnTimes(
+            GenerationUtil.getVanillaRegistries(), FeatureFlags.REGISTRY.allFlags());
 
     @Override
     public void generate(Path outDir, String genName) throws IOException {
@@ -146,7 +137,7 @@ public final class ItemTypesGenerator implements IGenerator {
                 writer.write(GenerationUtil.toString(addedItem));
                 writer.write("\")");
 
-                Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(addedItem);
+                Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(addedItem);
                 if (itemHolder.isEmpty()) {
                     writer.write(".build(); // TODO: MISSING FROM REGISTRY");
                     continue;
@@ -187,7 +178,6 @@ public final class ItemTypesGenerator implements IGenerator {
                         .filter(comp -> !defItemComps.has(comp.type())
                                 || !Objects.equals(comp.value(), defItemComps.get(comp.type())))
                         .filter(comp -> !comp.type().isTransient())
-                        .filter(comp -> !UNSYNCHRONIZED_TYPES.contains(comp.type()))
                         .sorted(Comparator.comparingInt(c ->
                                 BuiltInRegistries.DATA_COMPONENT_TYPE.getId(c.type())))
                         .toList()) {
@@ -265,9 +255,7 @@ public final class ItemTypesGenerator implements IGenerator {
             case AttributeModifier mod -> "new ItemAttributeModifiers.Modifier(" + c(mod.id()) + ", " + c(mod.id())
                     + ", " + c(mod.amount()) + ", " + c(mod.operation()) + ")";
             case FoodProperties props -> "new FoodProperties(" + props.nutrition() + ", " + c(props.saturation()) + ", "
-                    + props.canAlwaysEat() + ", " + c(props.eatSeconds()) + ", " + c(props.effects()) + ")";
-            case FoodProperties.PossibleEffect eff -> "new FoodProperties.PossibleEffect(" + c(eff.effect())
-                    + ", " + c(eff.probability()) + ")";
+                    + props.canAlwaysEat() + ")";
             case MobEffectInstance eff -> "new PotionEffect("
                     + c(eff.getEffect()) + ", " + c(eff.asDetails()) + ")";
             case MobEffectInstance.Details eff -> "new PotionEffect.Properties(" + eff.amplifier()
@@ -309,14 +297,15 @@ public final class ItemTypesGenerator implements IGenerator {
 
         MUSIC_DISC(item -> item.components().has(JUKEBOX_PLAYABLE)),
         EDIBLE(item -> item.components().has(FOOD)),
-        FIRE_RESISTANT(item -> item.components().has(DataComponents.FIRE_RESISTANT)),
-        WOOD_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.WOOD),
-        STONE_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.STONE),
-        IRON_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.IRON),
-        DIAMOND_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.DIAMOND),
-        GOLD_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.GOLD),
-        NETHERITE_TIER(item -> item instanceof TieredItem tiered && tiered.getTier() == Tiers.NETHERITE),
-        FUEL(item -> AbstractFurnaceBlockEntity.getFuel().containsKey(item)),
+        FIRE_RESISTANT(item -> Optionull.mapOrDefault(item.components().get(DataComponents.DAMAGE_RESISTANT),
+                resistant -> resistant.types().equals(DamageTypeTags.IS_FIRE), false)),
+        WOOD_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("wood")),
+        STONE_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("stone")),
+        IRON_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("iron")),
+        DIAMOND_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("diamond")),
+        GOLD_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("gold")),
+        NETHERITE_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("netherite")),
+        FUEL(item -> VANILLA_FUEL_VALUES.fuelItems().contains(item)),
         SWORD(item -> item instanceof SwordItem),
         SHOVEL(item -> item instanceof ShovelItem),
         AXE(item -> item instanceof AxeItem),
