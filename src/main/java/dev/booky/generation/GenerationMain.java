@@ -4,6 +4,7 @@ package dev.booky.generation;
 import com.mojang.logging.LogUtils;
 import dev.booky.generation.generators.BlockMappingsGenerator;
 import dev.booky.generation.generators.IGenerator;
+import dev.booky.generation.generators.ItemDataGenerator;
 import dev.booky.generation.generators.ItemTypesGenerator;
 import dev.booky.generation.generators.RegistryGenerator;
 import dev.booky.generation.generators.StateTypesGenerator;
@@ -56,7 +57,8 @@ public final class GenerationMain {
                 new BlockMappingsGenerator(),
                 new TagsGenerator(),
                 new ItemTypesGenerator(),
-                new StateTypesGenerator()
+                new StateTypesGenerator(),
+                new ItemDataGenerator()
         );
 
         LOGGER.info("Running {} generators...", generators.size());

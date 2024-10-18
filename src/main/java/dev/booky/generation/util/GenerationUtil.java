@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -25,6 +26,7 @@ public final class GenerationUtil {
             .setPrettyPrinting()
             .create();
     public static HolderLookup.Provider VANILLA_REGISTRIES = VanillaRegistries.createLookup();
+    public static RegistryAccess VANILLA_REGISTRY_ACCESS = null;
 
     private GenerationUtil() {
     }
