@@ -42,8 +42,8 @@ public final class BlockMappingsGenerator implements IGenerator {
 
             JsonObject object = new JsonObject();
             object.addProperty("type", BuiltInRegistries.BLOCK.getKey(block).getPath());
-            object.add("entries", entries);
             object.addProperty("def", defaultIndex);
+            object.add("entries", entries);
             array.add(object);
         }
 
