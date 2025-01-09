@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,7 +71,7 @@ public class StateTypesGenerator implements IGenerator {
                 writer.write("public static StateType ");
                 writer.write(GenerationUtil.asFieldName(addedBlock));
                 writer.write(" = StateTypes.builder().name(\"");
-                writer.write(GenerationUtil.toString(addedBlock));
+                writer.write(GenerationUtil.toString(addedBlock).toUpperCase(Locale.ROOT));
                 writer.write("\")");
 
                 Block block = BuiltInRegistries.BLOCK.get(addedBlock).orElseThrow().value();
