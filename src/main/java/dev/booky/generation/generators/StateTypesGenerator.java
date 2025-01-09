@@ -9,6 +9,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -75,12 +76,26 @@ public class StateTypesGenerator implements IGenerator {
                 writer.write("\")");
 
                 Block block = BuiltInRegistries.BLOCK.get(addedBlock).orElseThrow().value();
+                BlockState defState = block.defaultBlockState();
                 writer.write(".blastResistance(" + block.getExplosionResistance() + "f)");
                 writer.write(".hardness(" + block.defaultDestroyTime() + "f)");
                 writer.write(".isBlocking(" + block.properties().hasCollision + ")");
                 writer.write(".requiresCorrectTool(" + block.properties().requiresCorrectToolForDrops + ")");
-                writer.write(".isSolid(" + block.defaultBlockState().isSolid() + ")");
+                writer.write(".isSolid(" + defState.isSolid() + ")");
                 writer.write(".setMaterial(FIXME)");
+
+                if (defState.hasLargeCollisionShape()) {
+                    writer.write(".isShapeExceedsCube(");
+                    if (defState.cache != null) {
+                        // static collision shape, definitely exceeds cube
+                        writer.write("true");
+                    } else {
+                        // dynamic collision shape, depends on surroundings;
+                        // this needs to be manually fixed
+                        writer.write("FIXME");
+                    }
+                    writer.write(')');
+                }
 
                 writer.write(".build();");
             }
