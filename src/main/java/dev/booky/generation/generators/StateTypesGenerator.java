@@ -80,7 +80,7 @@ public class StateTypesGenerator implements IGenerator {
                 writer.write(".isBlocking(" + block.properties().hasCollision + ")");
                 writer.write(".requiresCorrectTool(" + block.properties().requiresCorrectToolForDrops + ")");
                 writer.write(".isSolid(" + block.defaultBlockState().isSolid() + ")");
-                // bob.append(".setMaterial(").append().append(")"); // TODO how?
+                writer.write(".setMaterial(FIXME)");
 
                 writer.write(".build();");
             }
