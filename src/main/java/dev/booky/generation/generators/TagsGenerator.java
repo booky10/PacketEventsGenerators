@@ -47,10 +47,10 @@ public final class TagsGenerator implements IGenerator {
 
         CompletableFuture<HolderLookup.Provider> vanillaRegistryFuture = CompletableFuture.supplyAsync(
                 VanillaRegistries::createLookup, Util.backgroundExecutor());
-        VanillaBlockTagsProvider vanillaBlockTags = vanilla.addProvider(output ->
+        vanilla.addProvider(output ->
                 new VanillaBlockTagsProvider(output, vanillaRegistryFuture));
         vanilla.addProvider(output ->
-                new VanillaItemTagsProvider(output, vanillaRegistryFuture, vanillaBlockTags.contentsGetter()));
+                new VanillaItemTagsProvider(output, vanillaRegistryFuture));
 
         generator.run();
     }
@@ -95,8 +95,8 @@ public final class TagsGenerator implements IGenerator {
 
         // build info data for available tag types - PacketEvents only supports blocks/items at the moment
         List<TagType> tagTypes = List.of(
-                new TagType(ResourceLocation.withDefaultNamespace("blocks"), "BlockTags", "StateTypes", BlockTags.class),
-                new TagType(ResourceLocation.withDefaultNamespace("items"), "ItemTags", "ItemTypes", ItemTags.class)
+                new TagType(ResourceLocation.withDefaultNamespace("block"), "BlockTags", "StateTypes", BlockTags.class),
+                new TagType(ResourceLocation.withDefaultNamespace("item"), "ItemTags", "ItemTypes", ItemTags.class)
         );
 
         // the content of this map is used for copying the tag content from

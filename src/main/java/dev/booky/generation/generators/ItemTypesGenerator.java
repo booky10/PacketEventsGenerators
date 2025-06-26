@@ -17,9 +17,7 @@ import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ShovelItem;
-import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.block.entity.FuelValues;
 import org.slf4j.Logger;
 
@@ -71,7 +69,7 @@ public final class ItemTypesGenerator implements IGenerator {
             Set<ResourceLocation> removedItems = new LinkedHashSet<>(prevItems);
             removedItems.removeAll(items);
             writer.write("// Removed items (");
-            writer.write(SharedConstants.getCurrentVersion().getName());
+            writer.write(SharedConstants.getCurrentVersion().name());
             writer.write("): ");
             writer.write(removedItems.toString());
             writer.newLine();
@@ -80,7 +78,7 @@ public final class ItemTypesGenerator implements IGenerator {
             Set<ResourceLocation> addedItems = new LinkedHashSet<>(items);
             addedItems.removeAll(prevItems);
             writer.write("// Added items (");
-            writer.write(SharedConstants.getCurrentVersion().getName());
+            writer.write(SharedConstants.getCurrentVersion().name());
             writer.write("): ");
             writer.write(addedItems.toString());
             writer.newLine();
@@ -140,20 +138,24 @@ public final class ItemTypesGenerator implements IGenerator {
         EDIBLE(item -> item.components().has(FOOD)),
         FIRE_RESISTANT(item -> Optionull.mapOrDefault(item.components().get(DataComponents.DAMAGE_RESISTANT),
                 resistant -> resistant.types().equals(DamageTypeTags.IS_FIRE), false)),
-        WOOD_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("wood")),
-        STONE_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("stone")),
-        IRON_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("iron")),
-        DIAMOND_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("diamond")),
-        GOLD_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("gold")),
-        NETHERITE_TIER(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains("netherite")),
+        WOOD_TIER("wood"),
+        STONE_TIER("stone"),
+        IRON_TIER("iron"),
+        DIAMOND_TIER("diamond"),
+        GOLD_TIER("gold"),
+        NETHERITE_TIER("netherite"),
         FUEL(item -> VANILLA_FUEL_VALUES.fuelItems().contains(item)),
-        SWORD(item -> item instanceof SwordItem),
+        SWORD("sword"),
         SHOVEL(item -> item instanceof ShovelItem),
         AXE(item -> item instanceof AxeItem),
-        PICKAXE(item -> item instanceof PickaxeItem),
+        PICKAXE("pickaxe"),
         HOE(item -> item instanceof HoeItem);
 
         private final Predicate<Item> predicate;
+
+        ItemAttribute(String keyword) {
+            this(item -> BuiltInRegistries.ITEM.getKey(item).getPath().contains(keyword));
+        }
 
         ItemAttribute(Predicate<Item> predicate) {
             this.predicate = predicate;

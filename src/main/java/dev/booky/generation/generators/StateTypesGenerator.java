@@ -52,7 +52,7 @@ public class StateTypesGenerator implements IGenerator {
             Set<ResourceLocation> removedBlocks = new LinkedHashSet<>(prevBlocks);
             removedBlocks.removeAll(blocks);
             writer.write("// Removed blocks (");
-            writer.write(SharedConstants.getCurrentVersion().getName());
+            writer.write(SharedConstants.getCurrentVersion().name());
             writer.write("): ");
             writer.write(removedBlocks.toString());
             writer.newLine();
@@ -61,7 +61,7 @@ public class StateTypesGenerator implements IGenerator {
             Set<ResourceLocation> addedBlocks = new LinkedHashSet<>(blocks);
             addedBlocks.removeAll(prevBlocks);
             writer.write("// Added blocks (");
-            writer.write(SharedConstants.getCurrentVersion().getName());
+            writer.write(SharedConstants.getCurrentVersion().name());
             writer.write("): ");
             writer.write(addedBlocks.toString());
             writer.newLine();
